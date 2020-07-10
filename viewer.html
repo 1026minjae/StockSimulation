@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>북일모의투자</title>
+    <style>
+        body {
+            margin : 0;
+            background-color : #e2e2e2;
+        }
+
+        font {
+            display : block;
+            font-weight : bold;
+            font-size : 24px;
+            text-align: center;
+        }
+
+        td {
+            border : 1px #7d7d7d solid;
+            padding : 2px;
+            margin : 0px;
+            text-align : center;
+        }
+
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;             
+            margin: 0; 
+            width: fit-content;
+        }
+
+        .box {
+            margin : 10px;
+            padding : 8px;
+            border : 1px #7d7d7d solid;
+            background-color : white;
+        }
+
+        .bigbox {
+            width : fit-content;
+            float : left;
+            clear : right;
+        }
+
+        .listbox {
+            width : auto;
+            display : block;
+            margin : 0px;
+        }
+
+        .text_box {
+            text-align: center;
+            margin : 0;
+            font-size : 16px;
+        }
+        
+        span.sold {
+            font-weight : bold;
+            color : black;
+        }
+
+        span.buy {
+            font-weight : bold;
+            color : red;
+        }
+
+        div#infobox, div#balancebox {
+            width: 300px;
+        }
+
+        div#graphbox {
+            width: 800px;
+            height : 400px;
+        }
+
+        div#catalogbox {
+            clear: both;
+        }
+    </style>
+    <script src="jquery-3.3.1.js"></script>
+    <script src="jquery.session.js"></script>
+    <script src="canvasjs.min.js"></script>
+    <script src="web3.min.js"></script>
+    <script>
+        var number;//플레이어 참가 번호
+        $(function(){
+            number = $.session.get("number");
+            $("#info_index").text(number);
+            $("#info_name").text("TEST");
+        });
+
+        var curr_date = new Date(2018,1,2);
+    </script>
+    <script>
+        var Web3 = require('web3');
+        var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+
+        var contractaddress = "0x48DD87073ce36CBE448D6F158a8B7722f2E41D14";
+        var contractabi = [
+            {
+            "constant": true,
+            "inputs": [
+                {
+                "name": "",
+                "type": "uint256"
+                }
+            ],
+            "name": "users",
+            "outputs": [
+                {
+                "name": "name",
+                "type": "string"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+            },
+            {
+            "constant": true,
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                "name": "",
+                "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+            },
+            {
+            "constant": false,
+            "inputs": [
+                {
+                "name": "newOwner",
+                "type": "address"
+                }
+            ],
+            "name": "transferOwnership",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+            },
+            {
+            "anonymous": false,
+            "inputs": [
+                {
+                "indexed": true,
+                "name": "previousOwner",
+                "type": "address"
+                },
+                {
+                "indexed": true,
+                "name": "newOwner",
+                "type": "address"
+                }
+            ],
+            "name": "OwnershipTransferred",
+            "type": "event"
+            },
+            {
+            "constant": false,
+            "inputs": [
+                {
+                "name": "_useraddress",
+                "type": "address"
+                },
+                {
+                "name": "name",
+                "type": "string"
+                }
+            ],
+            "name": "Register",
+            "outputs": [
+                {
+                "name": "",
+                "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+            },
+            {
+            "constant": false,
+            "inputs": [
+                {
+                "name": "_stockindex",
+                "type": "uint256"
+                },
+                {
+                "name": "_stockamount",
+                "type": "uint256"
+                }
+            ],
+            "name": "BuyStock",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "function"
+            },
+            {
+            "constant": false,
+            "inputs": [
+                {
+                "name": "_useraddress",
+                "type": "address"
+                },
+                {
+                "name": "_stockindex",
+                "type": "uint256"
+                },
+                {
+                "name": "_stockamount",
+                "type": "uint256"
+                },
+                {
+                "name": "_stockprice",
+                "type": "uint256"
+                }
+            ],
+            "name": "SellStock",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "function"
+            }
+        ];
+        
+        var contract = web3.eth.contract(contractabi);
+        var inst = contract.at(contractaddress);
+    </script>
+    <script>
+        $(function(){
+            var ajaxurl = 'ajax.php',
+            data =  {'std': "name", 'date': curr_date.toString()};
+            $.post(ajaxurl, data, function (response) {
+                console.log(response);
+            });
+        });
+
+        var sample_data = [
+            {index:1, name: "test1", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:2, name: "test2", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:3, name: "test3", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:4, name: "test4", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:5, name: "test5", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:6, name: "test6", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:7, name: "test7", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:8, name: "test8", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:9, name: "test9", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:10, name: "test10", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:11, name: "test11", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:12, name: "test12", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:13, name: "test13", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:14, name: "test14", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:15, name: "test15", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:16, name: "test16", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:17, name: "test17", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:18, name: "test18", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:19, name: "test19", price: 10, total: 50000, prev: 300, curr: 300},
+            {index:20, name: "test20", price: 10, total: 50000, prev: 300, curr: 300}
+        ];
+    </script>
+    <script>
+        //setInterval로 1분마다 데이터 갱신
+        //empty는 하위 태그를 모두 지운다. remove는 자신과 하위태그를 모두 지운다.
+
+        var i=0;
+        var log_cnt=0; //매매 기록이 얼마나 있는지 표시.
+        var current_on_graph; //현재 어떤 기업의 그래프를 표시하고 있는가?
+        var lines=0; //현재까지 주식 박스에 추가된 항목이 몇 개인가? 절대 감소되지 않음. 왜냐하면 각 라인을 구분하기 위해서임.
+
+        function setBalance() {
+            var current_bal = web3.eth
+        }
+
+        function setCatalogBox() {
+            var basic = "<tr><td>일련번호</td><td>기업명</td><td>한 주당 가격</td><td>개시가</td><td>시가총액</td><td>전일 거래량</td><td>금일 거래량</td><td>-</td><td>-</td><td>-</td></tr>";
+            $("#catalogbox table tbody").empty().append(basic);
+
+ //           for(;;)
+ //           {
+                var html = "<tr><td>기업번호</td><td>"+"기업명"+"</td><td>"+i+"</td><td>"+i+"</td><td>"+i+"</td><td>"+i+"</td><td>"+i+"</td><td><button onclick=\"draw_graph('기업명');\">주가 변동 그래프</button></td><td><input class=\"text_box\" type=number placeholder=\"매입할 주식 수\" min=0></td><td><button class=\"buy\">매입</button></td></tr>";
+                $("#catalogbox table tbody").append(html);
+ //           }
+
+            i+=1;
+        } 
+
+        function addStock(name, amount) {
+            var html="<tr id=\"stock"+lines+"\"><td>"+name+"</td><td>"+amount+"주</td><td><input class=\"text_box\" placeholder=\"매각할 주식 수\"></td><td><button class=\"sell\" onclick=\"\">매각</button></td></tr>";
+            $("#stockbox table tbody").append(html);
+            lines+=1;
+        }//stockbox 요소 추가
+
+        function editStock(index, amount) {
+            $("#stock"+index+" td").eq(1).text(amount+"주");
+        }//stockbox 요소 수정. 현재 주식 보유량을 수정하는 것
+
+        function delStock(index) {
+            $("#stock"+index).remove();
+        }//stockbox 요소 삭제
+
+        function addLog(bos, name, amount, price) {
+            var what;
+            if(bos=="sold") {
+                what="매각";
+            } else {
+                what="매입";
+            }
+            var html="<tr><td><span class=\""+bos+"\">"+what+"</span></td><td>"+name+"</td><td>"+amount+"주</td><td><span class=\""+bos+"\">"+price+"ETH</span></td></tr>";
+            $("#logbox table tbody").append(html);
+        }
+
+        $(function(){
+            setInterval(setCatalogBox, 60000);
+        });
+    </script>
+</head>
+
+<body>
+    <div class="bigbox">
+        <div id="infobox" class="box">
+            <font><span id="info_index">0</span>번 참가자 <span id="info_name">###</span></font>
+        </div>
+
+        <div id="balancebox" class="box">
+            <font>보유 이더 : <span id="balance">0</span> ETH</font>
+        </div>
+    </div>
+    <div class="bigbox">
+        <div id="graphbox" class="box bigbox"></div>
+
+        <div class="bigbox">
+            <div id="stockbox" class="box">
+                <font>보유 주식</font>
+                <table class="box listbox">
+                    <tbody>
+                        <tr>
+                            <td style="min-width:70px;">기업명</td>
+                            <td style="min-width:60px;">주식량</td>
+                            <td style="min-width:200px;">-</td>
+                            <td style="min-width:45px;">-</td>
+                        </tr>
+                    </tbody>
+                </table>    
+            </div>
+
+            <div id="logbox" class="box bigbox">
+                <font>매매 기록</font>
+                <table class="box">
+                    <tbody>
+                        <tr>
+                            <td style="min-width:32px;">-</td>
+                            <td style="min-width:120px;">기업명</td>
+                            <td style="min-width:48px;">거래량</td>
+                            <td style="min-width:60px;">매매가</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="catalogbox" class="box bigbox">
+        <font>주식 시장</font>
+        <table class="box">
+            <tbody>
+                <tr>
+                    <td>일련번호</td>
+                    <td>기업명</td>
+                    <td>한 주당 가격</td>
+                    <td>개시가</td>
+                    <td>시가총액</td>
+                    <td>전일 거래량</td>
+                    <td>금일 거래량</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>0001</td>
+                    <td>삼성로보틱스</td>
+                    <td>20ETH</td>
+                    <td>22.4ETH</td>
+                    <td>50480.64ETH</td>
+                    <td>1326주</td>
+                    <td>873주</td>
+                    <td><button onclick="draw_graph('삼성로보틱스');">주가 변동 그래프</button></td>
+                    <td><input class="text_box" type=number placeholder="매입할 주식 수" min=0></td>
+                    <td><button>매입</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+    var dps = [
+        { x: new Date(2017, 0, 1), y: 610 },
+		{ x: new Date(2017, 0, 2), y: 680 },
+		{ x: new Date(2017, 0, 3), y: 690 },
+		{ x: new Date(2017, 0, 4), y: 700 },
+		{ x: new Date(2017, 0, 5), y: 710 },
+		{ x: new Date(2017, 0, 6), y: 658 },
+		{ x: new Date(2017, 0, 7), y: 734 },
+		{ x: new Date(2017, 0, 8), y: 963 },
+		{ x: new Date(2017, 0, 9), y: 847 },
+		{ x: new Date(2017, 0, 10), y: 853 },
+		{ x: new Date(2017, 0, 11), y: 869 },
+		{ x: new Date(2017, 0, 12), y: 943 },
+		{ x: new Date(2017, 0, 13), y: 970 },
+		{ x: new Date(2017, 0, 14), y: 869 },
+		{ x: new Date(2017, 0, 15), y: 890 },
+		{ x: new Date(2017, 0, 16), y: 930 },
+		{ x: new Date(2017, 0, 17), y: 1850 },
+		{ x: new Date(2017, 0, 18), y: 1905 },
+		{ x: new Date(2017, 0, 19), y: 1980 },
+		{ x: new Date(2017, 0, 20), y: 1858 },
+		{ x: new Date(2017, 0, 21), y: 1034 },
+		{ x: new Date(2017, 0, 22), y: 963 },
+		{ x: new Date(2017, 0, 23), y: 847 },
+		{ x: new Date(2017, 0, 24), y: 853 },
+		{ x: new Date(2017, 0, 25), y: 869 },
+		{ x: new Date(2017, 0, 26), y: 943 },
+		{ x: new Date(2017, 0, 27), y: 970 },
+		{ x: new Date(2017, 0, 28), y: 869 },
+		{ x: new Date(2017, 0, 29), y: 890 },
+		{ x: new Date(2017, 0, 30), y: 930 },
+		{ x: new Date(2017, 0, 31), y: 750 }
+    ];
+    
+    var chart = new CanvasJS.Chart("graphbox", {
+        animationEnabled: true,
+        width:800,
+        height:400,
+        title:{
+            text:"북일모의투자시스템",
+            fontSize: 20
+        },
+        axisX:{
+            valueFormatString: "DD MMM"
+        },
+        axisY: {
+            title: "주가(ETH)",
+            includeZero: false,
+            scaleBreaks: {
+                autoCalculate: true
+            }
+        },
+        data: [{
+            type: "line",
+            xValueFormatString: "DD MMM",
+            color: "#F03030",
+            dataPoints: dps
+        }]
+    });
+    chart.render();
+
+    function draw_graph(name) {
+        chart.options.title.text=name;
+        var d=0;
+        dps.push({x: new Date(2017, 1, d++), y: 750+Math.floor(Math.random()*130)});
+        dps.shift();
+        chart.render();
+    }
+
+    setInterval() //1분이 지나고 표시 중이던 그래프를 갱신.
+    </script>
+</body>
+
+</html>

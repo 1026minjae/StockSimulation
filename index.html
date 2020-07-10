@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>북일모의투자</title>
+    <style>
+        #ftitle {
+            display : block;
+            text-align : center;
+            margin-top : 200px;
+            font-size : 40px;
+            font-weight : bold;
+        }
+
+        .text_box {
+            width : 600px;
+            text-align : center;
+            font-size : 20px;
+        }
+    </style>
+    <script src="jquery-3.3.1.js"></script>
+    <script src="jquery.session.js"></script>
+    <script>
+        $(function(){
+            $(".middle").bind("load", function(){
+                var mywidth = parseFloat($(this).css("width"));
+                var parentwidth = parseFloat($(this).parent().css("width"));
+                $(this).css({"margin-left": (parentwidth-mywidth)/2 + "px"});
+            });
+            $(".middle").trigger("load");
+        });
+
+        $(function(){
+            var windowheight=parseFloat($(window).innerHeight());
+            var myheight = parseFloat($("#ftitle").css("height"));
+            $("#ftitle").css({"margin-top":(windowheight/2 -myheight)+"px"});
+        });
+
+        $(document).ready(function(){
+            $(window).resize(function(){
+                $(".middle").trigger("load");
+            });
+        });
+
+        $(function(){
+            $("input").keydown(function(event) {
+                if(event.keyCode == '13') {
+                    var number = $("input").val();
+                    $.session.set("number",number);
+                    window.location.replace("viewer.html");
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <font id="ftitle">북일 모의 주식투자 시스템</font>
+    <input class="middle text_box" placeholder="참가번호를 입력하세요" maxlength=20>
+</body>
+
+</html>
